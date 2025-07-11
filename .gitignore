@@ -1,0 +1,12 @@
+#ignore virtual environment
+.venv
+
+#ignore Python cache files
+__pycache__/
+*.py[cod]
+
+#ignore client secret files
+client_secret.json
+
+#ignore database files
+instance/*.db

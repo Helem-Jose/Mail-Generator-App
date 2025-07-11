@@ -1,0 +1,117 @@
+{% extends "base.html" %} {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}" />
+<title>Login</title>
+{% endblock %} {% block content %}
+<div class="container"></div>
+<div class="wrapper">
+  <div class="card-switch">
+    <label class="switch">
+      <input type="checkbox" class="toggle" />
+      <span class="slider"></span>
+      <span class="card-side"></span>
+      <div class="flip-card__inner">
+        <div class="flip-card__front">
+          <div class="title">LOGIN</div>
+          {% if message == "Invalid credentials!" %}
+          <label class="error-message">{{ message }}</label>
+          <script>
+            document
+              .querySelector(".error-message")
+              .classList.add("fade-out-image");
+            setTimeout(
+              () => (document.querySelector(".error-message").hidden = true),
+              3000
+            );
+          </script>
+          {%endif %} {%if message == "User added successfully!" %}
+          <label class="success-message">{{ message }}</label>
+          <script>
+            document
+              .querySelector(".success-message")
+              .classList.add("fade-out-image");
+            setTimeout(
+              () => (document.querySelector(".success-message").hidden = true),
+              3000
+            );
+          </script>
+          {%endif %} {% if message == "Login successful!" %}
+          <label class="success-message">{{ message }}</label>
+          <script>
+            document
+              .querySelector(".success-message")
+              .classList.add("fade-out-image");
+            setTimeout(
+              () => (document.querySelector(".success-message").hidden = true),
+              3000
+            );
+          </script>
+          {%endif%}
+          <form class="flip-card__form" action="/validateUser" method="POST">
+            <input
+              class="flip-card__input"
+              name="email"
+              placeholder="Email"
+              type="email"
+            />
+            <input
+              class="flip-card__input"
+              name="password"
+              placeholder="Password"
+              type="password"
+            />
+            <button class="flip-card__btn">Let's go!</button>
+          </form>
+        </div>
+        <div class="flip-card__back">
+          <div class="title">SIGN UP</div>
+          {% if message == "User already exists!" %}
+          <label class="error-message">{{ message }}</label>
+          <script>
+            document
+              .querySelector(".error-message")
+              .classList.add("fade-out-image");
+            setTimeout(
+              () => (document.querySelector(".error-message").hidden = true),
+              3000
+            );
+          </script>
+
+          {% endif %}
+          <form class="flip-card__form" action="/addUser" method="POST">
+            <input
+              class="flip-card__input"
+              name="name"
+              placeholder="Name"
+              type="text"
+            />
+            <input
+              class="flip-card__input"
+              name="email"
+              placeholder="Email"
+              type="email"
+            />
+            <input
+              class="flip-card__input"
+              name="password"
+              placeholder="Password"
+              type="password"
+            />
+            <button class="flip-card__btn">Confirm!</button>
+          </form>
+        </div>
+      </div>
+    </label>
+  </div>
+</div>
+<div class="footer">
+  <label>Made with <span class="heart">♥</span> by Helem Jose</label>
+</div>
+{% if session %}
+<script>
+  document.querySelector(".toggle").checked = false;
+</script>
+{% else %}
+<script>
+  document.querySelector(".toggle").checked = true;
+</script>
+{% endif %} {%endblock %}
