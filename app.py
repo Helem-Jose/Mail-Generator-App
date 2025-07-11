@@ -4,9 +4,13 @@ from flask_sqlalchemy import SQLAlchemy
 from db import init_app, db
 from models import User
 import authenticate
+import json
+
+with open("app_secret_key.json", "r") as f:
+    secret_key = json.load(f)["app-key"]
 
 app = Flask(__name__)
-app.secret_key = "12344o3o_kekien_l9123ldfk**34mj"
+app.secret_key = secret_key
 init_app(app)
 
 

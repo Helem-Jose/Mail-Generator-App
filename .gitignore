@@ -7,6 +7,7 @@ __pycache__/
 
 #ignore client secret files
 client_secret.json
+app_secret_key.json
 
 #ignore database files
 instance/*.db
