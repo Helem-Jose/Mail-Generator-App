@@ -1,10 +1,14 @@
 from flask import Flask, render_template, redirect, url_for
 from flask import request, session
 from flask_sqlalchemy import SQLAlchemy
+from google.oauth2.credentials import Credentials
 from db import init_app, db
 from models import User
+import requests
 import authenticate
+import get_messages
 import json
+import threading
 
 with open("app_secret_key.json", "r") as f:
     secret_key = json.load(f)["app-key"]
@@ -12,8 +16,6 @@ with open("app_secret_key.json", "r") as f:
 app = Flask(__name__)
 app.secret_key = secret_key
 init_app(app)
-
-
 
 @app.route("/")
 def index():
@@ -57,24 +59,48 @@ def addUser():
 
 @app.route("/home")
 def home():
+    print("Accessing home page...")
     if "logged_in" not in session or not session["logged_in"]:
         return render_template("login.html", session=True, message="Please log in first!")
+    if "credentials" in session:
+        credentials = session["credentials"]
+        info_thread = threading.Thread(target=get_messages.get_messages, args=(json.loads(credentials),))
+        info_thread.start()
     return render_template("home.html", session=True, name=session.get("name", "Guest"))
 
 @app.route("/authorize")
 def authorization():
     print("Authorizing...")
+    if "credentials" in session:
+        creds = Credentials.from_authorized_user_info(json.loads(session["credentials"]))
+        if creds and creds.valid and creds.expired == False and creds.refresh_token:
+            print("Already authorized, redirecting to home...")
+            print("Credentials:", session["credentials"])
+            return redirect(url_for('home'))
     authorization_url, state = authenticate.authorize()
     session['state'] = state
+    session.modified = True
     return redirect(authorization_url)
 
 @app.route("/oauth2callback")
 def oauth2callback():
-    credientials = authenticate.callback(session['state'], request.args.get('code'))
-    session['credentials'] = credientials
+    print("OAuth2 callback...")
+    if request.args.get('state') != session['state']:
+        print("State mismatch. Possible CSRF attack.")
+        return redirect(url_for('authorization'))
+    credentials = authenticate.callback(session['state'], request.args.get('code'))
+    session['credentials'] = credentials
+    print("Credentials received:", credentials)
+    creds = Credentials.from_authorized_user_info(json.loads(credentials))
+    if not creds.refresh_token:
+        print("Refresh token not present. Re-authorizing...")
+        return redirect(url_for('authorization'))
+    print("Credentials validity check...",  creds.valid)
     session['logged_in'] = True
     return redirect(url_for('home'))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # use_reloader=False to prevent the app from running twice may help in session issues
+    app.run(debug=True, threaded=True, use_reloader=False)
+    #session.clear()  # Clear session at startup to avoid stale data
     
