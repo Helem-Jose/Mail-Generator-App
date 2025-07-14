@@ -59,15 +59,35 @@ def addUser():
 
 @app.route("/search", methods=["GET"])
 def search_mails():
-    print("Searching emails...")
-    query = f"subject:{request.args.get('subject')}"
+    if request.method == "GET":
+        print("Searching emails...")
+        query = f"subject:{request.args.get('subject')}"
+        credentials = authenticate.get_credentials_from_session(session)
+        if not credentials:
+            print("No valid credentials found in session, redirecting to authorization...")
+            return redirect(url_for('authorization'))
+        print("Getting messages with query:", query)
+        messages = get_messages.get_messages(credentials, query,)
+        return jsonify({"results": messages})
+
+@app.route("/search_window")
+def search_window():
+    return render_template("search.html")
+
+@app.route("/get_thread/<threadID>", methods=["GET"])
+def get_thread(threadID):
+    print(f"Getting thread with thread ID : {threadID}")
     credentials = authenticate.get_credentials_from_session(session)
     if not credentials:
         print("No valid credentials found in session, redirecting to authorization...")
         return redirect(url_for('authorization'))
-    print("Getting messages with query:", query)
-    messages = get_messages.get_messages(credentials, query,)
-    return jsonify({"results": messages})
+    mails = get_messages.get_thread(credentials, threadID)
+    session["mails"] = mails
+    return redirect(url_for("generate"))
+
+@app.route("/generate_mail/", methods=["GET"])
+def generate():
+    return render_template("generate_mail.html", mails=session["mails"])
 
 @app.route("/home")
 def home():
