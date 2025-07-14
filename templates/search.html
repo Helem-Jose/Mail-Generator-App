@@ -1,0 +1,84 @@
+{%extends "base.html" %} {%block head%}
+<title>Search Page</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='search.css') }}" />
+{%endblock%} {%block content%}
+<div class="container">
+  <h2>Search Emails</h2>
+
+  <form id="search-form">
+    <input
+      type="text"
+      name="subject"
+      id="subject"
+      placeholder="Enter subject..."
+      required
+    />
+    <button type="submit">Search</button>
+  </form>
+
+  <table id="results">
+    <thead>
+      <tr>
+        <th>Subject</th>
+        <th>Body Snippet</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="3">Search results will appear here.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  document
+    .getElementById("search-form")
+    .addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const subject = document.getElementById("subject").value;
+      const tableBody = document.querySelector("#results tbody");
+      tableBody.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+      const res = await fetch(`/search?subject=${encodeURIComponent(subject)}`);
+      const data = await res.json();
+      tableBody.innerHTML = "";
+      
+      if (data.results && data.results.length > 0) {
+        data.results.forEach((item) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+                <td>${item.subject}</td>
+                <td>${decodeHTMLEntities(item.body)}</td>
+                <td> <button class="thread-select" data-thread-id="${item.threadId}">
+                      <span class="transition"></span>
+                      <span class="gradient"></span>
+                      <span class="label">Select</span>
+                    </button>
+                </td>
+            `;
+          tableBody.appendChild(row);
+        });
+
+        document.querySelectorAll(".thread-select").forEach((button) => {button.addEventListener("click", async (event) => {
+        event.preventDefault();
+        console.log(`Thread ID: ${button.dataset.threadId}`);
+        window.location.href = `/get_thread/${button.dataset.threadId}`;
+        })});
+      } else {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="2">${
+          data.message || "No results found."
+        }</td>`;
+        tableBody.appendChild(row);
+      }
+    });
+    
+
+  function decodeHTMLEntities(text) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = text;
+    return txt.value;
+  }
+</script>
+{% endblock %}
