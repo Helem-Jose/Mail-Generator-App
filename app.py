@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, jsonify
 from flask import request, session
 from flask_sqlalchemy import SQLAlchemy
 from google.oauth2.credentials import Credentials
@@ -57,15 +57,29 @@ def addUser():
             db.session.commit()
         return render_template("login.html",session = True, message="User added successfully!")  
 
+@app.route("/search", methods=["GET"])
+def search_mails():
+    print("Searching emails...")
+    query = f"subject:{request.args.get('subject')}"
+    credentials = authenticate.get_credentials_from_session(session)
+    if not credentials:
+        print("No valid credentials found in session, redirecting to authorization...")
+        return redirect(url_for('authorization'))
+    print("Getting messages with query:", query)
+    messages = get_messages.get_messages(credentials, query,)
+    return jsonify({"results": messages})
+
 @app.route("/home")
 def home():
     print("Accessing home page...")
     if "logged_in" not in session or not session["logged_in"]:
+        print("User not logged in, redirecting to login...")
         return render_template("login.html", session=True, message="Please log in first!")
     if "credentials" in session:
-        credentials = session["credentials"]
-        info_thread = threading.Thread(target=get_messages.get_messages, args=(json.loads(credentials),))
-        info_thread.start()
+        credentials = authenticate.get_credentials_from_session(session)
+        if not credentials:
+            print("No valid credentials found in session, redirecting to authorization...")
+            return redirect(url_for('authorization'))
     return render_template("home.html", session=True, name=session.get("name", "Guest"))
 
 @app.route("/authorize")
@@ -101,6 +115,6 @@ def oauth2callback():
 
 if __name__ == "__main__":
     # use_reloader=False to prevent the app from running twice may help in session issues
-    app.run(debug=True, threaded=True, use_reloader=False)
+    app.run(debug=True, threaded=True)
     #session.clear()  # Clear session at startup to avoid stale data
     
