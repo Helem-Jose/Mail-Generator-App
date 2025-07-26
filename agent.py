@@ -343,21 +343,17 @@ def generate_email_reply(thread_summary: str, style_hint: str, additional_info:s
 You are an AI email assistant. Your task is to write an email reply using:
 - The thread summary
 - The user's writing style
-- Any extra user instructions (optional)
+- User Instructions provided using a question and answer format.
 
-STRICT RULES:
-1. If any critical detail is missing or ambiguous (e.g., user's intent, decision, tone), ask for clarification like this:
-json
-{1: <your question>}
 
-2. If everything is clear, respond ONLY like this:
+Respond ONLY like this:
 FINAL ANSWER:
 <the full reply>
 
 DO NOT make assumptions. Only use the content provided.
 DO NOT guess the user's response to requests or questions.
 
-The user's writing style is already provided — do not ask for it again.
+The user's writing style is already provided.
 """
 
     user_prompt = f"""
@@ -382,7 +378,7 @@ The user's writing style is already provided — do not ask for it again.
 
     return chat_completion.choices[0].message.content
 
-def check_missing_info(thread_summary: str, recipient:str) -> dict:
+def check_missing_info(thread_summary: str, recipient:str, additional_info:str) -> dict:
     """
     Ask the model if anything is unclear or missing before generating a reply.
 
@@ -393,19 +389,21 @@ def check_missing_info(thread_summary: str, recipient:str) -> dict:
     
     system_prompt = """You are an assistant that ensures that all the necessary information is present in order to reply to a given
     mail thread. The email thread that you have been provided contains the main discussion points, open questions that need to be answered and the tone of the conversation 
-    previously had. You are the recipient of the mail.
+    previously had. You are the recipient of the mail. You are also provided with answers to previous questions that you have asked if available.
     You have to ask questions in order to determine what the recipient would answer to the thread. If you have all the information required to 
-    determine how the recipient would answer from the thread itself, you do not need to ask questions.
+    determine how the recipient would answer from the thread itself, you do not need to ask questions. If the user does not wish to provide information regarding certain facts
+    consider those information to be answered and ignore them from your output.
     Use the exact format as mentioned in your reply. DO NOT answer in any other format.
 
 STRICT RULES:
-1. Your quesions should be in the following format
+1. Your quesions should be in the following format only, no other output is permitted. You may ask multiple questions in this format.
 {1: <your question>}
 
-2. If everything is clear, respond ONLY like this:
+2. If you are certain that all the information that you require to reply as the recipient is present then respond ONLY like this:
 FINAL ANSWER:
-OK
+<Your summary of the missing information that you have gathered, If no information was missing just answer "NILL">
 
+DO NOT ask too many questions as it would lead to disturbing the user
 DO NOT make assumptions. Only use the content provided.
 DO NOT guess the user's response to requests or questions.
 Make sure you have all the details present to answer the mail from the perspective of the user.
@@ -414,6 +412,9 @@ Make sure you have all the details present to answer the mail from the perspecti
     You are {recipient} the recipient.
 Thread Summary:
 {thread_summary}
+
+Answers to previous questions: 
+{additional_info}
 """
     print("User prompt :", precheck_prompt, "\n\n")
 
@@ -428,9 +429,6 @@ Thread Summary:
     )
 
     response = chat_completion.choices[0].message.content.strip()
-    print("RESPONSE :\n", response, "\n=============\n")
-    if response.lower().startswith("ok"):
-        return {"status": "ok"}
     
     # Use your regex extractor from earlier
     questions = extract_questions_from_text(response)
@@ -439,6 +437,11 @@ Thread Summary:
     
     return {"status": "unknown", "raw": response}
 
+def get_answers(questions:dict):
+    answers = {}
+    for i, question in questions.items():
+        answers[question] = input(question)
+    return answers
 
 def summarize_threads(full_thread_text:str) -> str :
 
@@ -477,6 +480,39 @@ def summarize_threads(full_thread_text:str) -> str :
     )
 
     return chat_completion.choices[0].message.content
+
+def run_email_assistant(thread_summary: str, style_hint: str, recipient: str) -> str:
+    """
+    End-to-end email assistant.
+    - Repeatedly asks questions until the model is satisfied.
+    - Accumulates clarification answers.
+    - Generates reply using all gathered info.
+    """
+    additional_info = ""  # This will accumulate all Q&A
+    
+    while True:
+        result = check_missing_info(thread_summary, recipient, additional_info)
+
+        if result["status"] == "unknown":
+            match = re.search(r"FINAL ANSWER:\s*(.*)", result.get("raw", ""), re.DOTALL)
+            if match:
+                extracted = match.group(1).strip()
+                if extracted.upper() != "NILL":
+                    additional_info += f"\n{extracted}"
+                break
+            else:
+                print("⚠️ Unrecognized output:\n", result.get("raw", ""))
+                return "MODEL ERROR"
+
+        if result["status"] == "clarification":
+            answers = get_answers(result["questions"])
+            formatted = "\n".join([f"{qid}: {ans}" for qid, ans in answers.items()])
+            additional_info += f"\n{formatted}"
+            continue
+
+    print("\n🛠 Generating final reply...\n")
+    reply = generate_email_reply(thread_summary, style_hint, additional_info)
+    return reply
 
 print("Initializing Agent ....\n\n")
 
@@ -607,8 +643,53 @@ Rajiv
 
 """
 
-summary = summarize_threads(email_thread).split("**Summary:**")[1]
+email_thread2 = """
+From: Rajiv Mehta
+Subject: Partnership Discussion with Novatech
+
+Hi Aditi,
+
+Following up on our call with Novatech — they’re interested in using our analytics API in their dashboard and want to start integration by mid-September.
+
+They've requested sandbox access by next Monday (July 22), and they’re asking if we prefer a flat licensing model or revenue-sharing.
+
+Can you confirm if you’re available to lead the integration? Also, would you prefer we go with a flat fee for now?
+
+Let me know your thoughts. I’ll loop in Legal once we finalize direction.
+
+Best,  
+Rajiv
+vbnet
+Copy
+Edit
+From: Aditi Kapoor
+Subject: Re: Partnership Discussion with Novatech
+
+Hi Rajiv,
+
+I’d be happy to lead the integration. I’ll need some support from backend for OAuth and data access controls.
+
+As for pricing, I’d lean toward a flat license for now — simpler to manage. We can revisit revenue-sharing once we see traction.
+
+Let me know if you need me to sync with Tanmay on the technical side.
+
+– Aditi"""
+
+email_thread3 = """
+From: Anil
+Subject: Confirmation of the order placement
+
+I have placed the order for the new data servers. Will talk to you about it later.
+
+Regards
+Anil
+"""
+
+summary = summarize_threads(email_thread3).split("**Summary:**")[1]
 
 print("===============\nSummary :" , summary, "\n===============\n")
-#reply = check_missing_info(summary, "Anil")
+
+run_email_assistant(summary, user_style, "Ravi")
+
+#reply = check_missing_info(summary, "Anil", "")
 #print(reply)
