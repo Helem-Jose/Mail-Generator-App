@@ -4,11 +4,13 @@ from flask_sqlalchemy import SQLAlchemy
 from google.oauth2.credentials import Credentials
 from db import init_app, db
 from models import User
+import re
 import requests
 import authenticate
 import get_messages
 import json
 import threading
+import agent
 
 with open("app_secret_key.json", "r") as f:
     secret_key = json.load(f)["app-key"]
@@ -40,7 +42,7 @@ def validate_user():
         session["name"] =  current_user.name
         session["logged_in"] = True
         session["user_id"] = current_user.id
-        return render_template("login.html", session = True, message="Login successful!")
+        return render_template("home.html")
 
 @app.route("/addUser", methods=["POST"])
 def addUser():
@@ -85,9 +87,98 @@ def get_thread(threadID):
     session["mails"] = mails
     return redirect(url_for("generate"))
 
+@app.route("/get_model_output/<reply>", methods = ["GET"])
+def question(reply):
+    print("=====================\nQuestions Present till now: ", session['questions'], "\nAnswers :", session['answers'])
+    print("Reply Received from user :", reply)
+    next_question = ''
+    if 'questions' in session:
+        print("\nGenerating ..")
+        session['answers'][session['questions'][0]] = reply
+        print(session['answers'])
+        session['questions'].pop(0)
+        session.modified = True
+        print("After removing element..", session['questions'], len(session['questions']))
+        if len(session['questions']) == 0:
+            print("Getting new questions ...")
+            formatted = "\n".join([f"{qid}: {ans}" for qid, ans in session['answers'].items()])
+            session["answers"] = {}
+            print(formatted)
+            session['additional_info'] += f"\n{formatted}"
+            print("Additional info :", session['additional_info'])
+            question_dict = agent.run_email_assistant(session['summary'], session["style_hint"], session['name'], session["additional_info"])
+            print("Received questions", question_dict)
+            if question_dict != "FINAL ANSWER":
+                for i, question in question_dict.items():
+                    session['questions'].append(question)
+                session.modified = True
+            else:
+                reply = agent.generate_email_reply(session['summary'], session["style_hint"], session["additional_info"])
+                print("*************\nReply generated :\n", re.sub(r"^FINAL ANSWER:\s*", "", reply))
+                return jsonify({'reply': re.sub(r"^FINAL ANSWER:\s*", "", reply), 'question': "Reply generated..."})
+        next_question = session['questions'][0] 
+    else:
+        print("Error")
+    print("Session questions after loop :", session['questions'], len(session['questions']), "\n\n")
+    session.modified = True
+    return jsonify({'question':next_question})
+
+
+def convert_summary_to_html(summary_text):
+    lines = summary_text.strip().split('\n')
+    list_items = [re.sub(r'^\*\s*', '', line) for line in lines if line.strip().startswith("*")]
+    html = "<ul>\n" + "\n".join([f"<li>{item}</li>" for item in list_items]) + "\n</ul>"
+    return html
+
 @app.route("/generate_mail/", methods=["GET"])
 def generate():
-    return render_template("generate_mail.html", mails=session["mails"])
+    session['additional_info'] = ''
+    session['questions'] = []
+    session['answers'] = {}
+    session['style_hint'] = """
+Connective word usage is 4.0%, indicating a low presence of linking words.
+Pronoun usage is 8.0%, which is considered moderate.
+Lexical diversity (based on unique words longer than 3 characters) is 65.0%, suggesting a very high variety in vocabulary.
+The average sentence length is 15.2 words, which is considered long.
+Clause density (indicating structural complexity from subordinate, adverbial, or relative clauses) is 12.0%, which is a moderate level.
+Passive voice usage is 3.0%, indicating a low preference for passive constructions.
+The average word length is 4.8 characters, which is considered short.
+The average number of syllables per word is 1.5, indicating short word complexity.
+The Type-Token Ratio (vocabulary richness) is 55.0%, suggesting a very high diversity in word choice.
+Informal language usage is 0.5%, indicating a very low presence of informal words.
+The Flesch-Kincaid readability grade is 7.5, meaning the text is easy to read (suitable for middle school grades).
+The SMOG readability index is 9.0, suggesting the text is easy to read.
+The Gunning-Fog readability score is 9.8, indicating the text is moderately easy to read (suitable for high school grades).
+The proportion of nouns is 22.0%, which is a high ratio of nouns in the text.
+The proportion of verbs is 18.0%, which is a high ratio of verbs in the text.
+The proportion of adjectives is 7.0%, which is a moderate ratio of adjectives in the text.
+The proportion of adverbs is 5.0%, which is a moderate ratio of adverbs in the text.
+Contraction usage is 1.0%, indicating a very low presence of contractions.
+Contraction usage is 1.0%, indicating a very low presence of contractions.
+Exclamation mark usage is 0.2%, which is a very low density per sentence.
+Question mark usage is 0.8%, which is a very low density per sentence.
+Emoji or special symbol usage is 0.0%, indicating a very low presence of such characters.
+""" #Properly generate this and put in database
+    session['summary'] = convert_summary_to_html(agent.summarize_threads(get_mail_thread(session["mails"])).split("**Summary:**")[1])
+    print("Summary Generated : ", session['summary'])
+    question_dict = agent.run_email_assistant(session['summary'], session["style_hint"], session['name'], session["additional_info"])
+    print("Received questions", question_dict)
+    reply = "Gathering info..."
+    if question_dict != "FINAL ANSWER":
+        for i, question in question_dict.items():
+            session['questions'].append(question)
+        next_question = session['questions'][0] 
+    else:
+        reply = agent.generate_email_reply(session['summary'], session["style_hint"], session["additional_info"])
+    session.modified = True        
+
+    return render_template("generate_mail.html", mails=session["mails"], summary=session['summary'], question = next_question, reply = reply)
+
+def get_mail_thread(mails):
+    thread = ""
+    for mail in mails:
+        thread += f"From: {mail['SenderName']} \nSubject: {mail['subject']}\n{mail['body']}\n\n"
+    return thread
 
 @app.route("/home")
 def home():
@@ -135,6 +226,5 @@ def oauth2callback():
 
 if __name__ == "__main__":
     # use_reloader=False to prevent the app from running twice may help in session issues
-    app.run(debug=True, threaded=True)
+    app.run(debug=True, threaded=True, use_reloader=False)
     #session.clear()  # Clear session at startup to avoid stale data
-    
