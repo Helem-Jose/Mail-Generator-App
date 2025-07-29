@@ -1,25 +1,60 @@
 {%extends "base.html" %} 
 
 {% block head %}
-<title>Generate mail</title>
+<title>Mail Generator</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='generate.css') }}" />
 {%endblock%}
 
 {% block content %}
+    <div class="container">
     <h1>Mail Generator</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Subject</th>
-                <th>Body</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for mail in mails %}
-            <tr>
-                <td>{{ mail.subject|safe }}</td>
-                <td>{{ mail.body |safe}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+    <label>Current Thread :</label>
+    <div class="box thread">
+        {% for mail in mails %}
+      <p><strong>Subject:</strong> {{ mail.subject|safe }}<br><strong>Body:</strong> {{ mail.body |safe}}</p>
+      {% endfor %}
+    </div>
+
+    <label>Generated Summary of Thread :</label>
+    <div class="box summary">
+      {{summary|safe}}
+    </div>
+
+    <label>Generated Mail :</label>
+    <div class="box mail">
+      <p>{{reply|safe}}</p>
+    </div>
+
+    <div class="question">
+      <em>{{question|safe}}</em>
+    </div>
+
+    <div class="reply-box">
+      <input type="text" placeholder="Enter your reply..." />
+      <button id="qButton">&#10148;</button>
+    </div>
+  </div>
+
+  <script>
+    async function sendRequest(){
+      const reply = document.querySelector('.reply-box input').value;
+      console.log(reply);
+      if (!reply) {
+        console.log("Please enter a reply.");
+        return;
+      }
+      const response = await fetch(`/get_model_output/${reply}`);
+      data = await response.json();
+      if ('reply' in data){
+        console.log("Reply received:", data.reply);
+        document.querySelector('.mail').innerHTML = `<p>${data.reply}</p>`;
+      }
+      console.log(data.question);
+      document.querySelector('.question').innerHTML = `<em>${data.question}</em>`;
+    }
+
+    document.querySelector('#qButton').addEventListener('click', sendRequest)
+  </script>
+
 {%endblock%}

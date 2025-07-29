@@ -3,22 +3,17 @@ import nltk
 import spacy
 import textstat
 from collections import Counter
-from sklearn.metrics.pairwise import cosine_similarity
 import os
+from dotenv import load_dotenv
 from groq import Groq
-from agno.models.groq import Groq as Groq_agno
-from agno.tools import tool
 from sentence_transformers import SentenceTransformer
-from sentence_transformers.util import cos_sim
 import numpy as np
-from typing import List
-from agno.agent import Agent
-from agno.tools.function import UserInputField
-from agno.utils import pprint
 import math
 
+load_dotenv()
+
 print("Loaded Modules...")
-#nltk.download('punkt')
+#nltk.download('punkt') # This has to be only run once
 nlp = spacy.load("en_core_web_sm")
 embedder = SentenceTransformer('all-MiniLM-L6-v2')
 client = Groq(
@@ -416,7 +411,7 @@ Thread Summary:
 Answers to previous questions: 
 {additional_info}
 """
-    print("User prompt :", precheck_prompt, "\n\n")
+    #print("User prompt :", precheck_prompt, "\n\n")
 
     chat_completion = client.chat.completions.create (
         model= "meta-llama/llama-4-scout-17b-16e-instruct",
@@ -430,6 +425,7 @@ Answers to previous questions:
 
     response = chat_completion.choices[0].message.content.strip()
     
+    #print("Response :", response)
     # Use your regex extractor from earlier
     questions = extract_questions_from_text(response)
     if questions:
@@ -481,41 +477,34 @@ def summarize_threads(full_thread_text:str) -> str :
 
     return chat_completion.choices[0].message.content
 
-def run_email_assistant(thread_summary: str, style_hint: str, recipient: str) -> str:
+def run_email_assistant(thread_summary: str, style_hint: str, recipient: str, additional_info = "") -> str:
     """
     End-to-end email assistant.
     - Repeatedly asks questions until the model is satisfied.
     - Accumulates clarification answers.
     - Generates reply using all gathered info.
     """
-    additional_info = ""  # This will accumulate all Q&A
-    
-    while True:
-        result = check_missing_info(thread_summary, recipient, additional_info)
+    result = check_missing_info(thread_summary, recipient, additional_info)
 
-        if result["status"] == "unknown":
-            match = re.search(r"FINAL ANSWER:\s*(.*)", result.get("raw", ""), re.DOTALL)
-            if match:
-                extracted = match.group(1).strip()
-                if extracted.upper() != "NILL":
-                    additional_info += f"\n{extracted}"
-                break
-            else:
-                print("⚠️ Unrecognized output:\n", result.get("raw", ""))
-                return "MODEL ERROR"
+    if result["status"] == "unknown":
+        match = re.search(r"FINAL ANSWER:\s*(.*)", result.get("raw", ""), re.DOTALL)
+        if match:
+            print("\Ready to generate final reply...\n")
+            #reply = generate_email_reply(thread_summary, style_hint, additional_info)
+            return "FINAL ANSWER" #Tells that the model is ready to print the final answer
+        else:
+            print("⚠️ Unrecognized output:\n", result.get("raw", ""))
+            return "MODEL ERROR"
 
-        if result["status"] == "clarification":
-            answers = get_answers(result["questions"])
-            formatted = "\n".join([f"{qid}: {ans}" for qid, ans in answers.items()])
-            additional_info += f"\n{formatted}"
-            continue
+    if result["status"] == "clarification":
+        return result["questions"] # return the questions the model wants to ask
+        #continue
 
-    print("\n🛠 Generating final reply...\n")
-    reply = generate_email_reply(thread_summary, style_hint, additional_info)
-    return reply
 
-print("Initializing Agent ....\n\n")
+print("Finished Initializing Tools ....\n\n")
 
+
+#Test Material
 user_style = """
 Connective word usage is 4.0%, indicating a low presence of linking words.
 Pronoun usage is 8.0%, which is considered moderate.
@@ -642,7 +631,6 @@ Rajiv
 
 
 """
-
 email_thread2 = """
 From: Rajiv Mehta
 Subject: Partnership Discussion with Novatech
@@ -674,7 +662,6 @@ As for pricing, I’d lean toward a flat license for now — simpler to manage. 
 Let me know if you need me to sync with Tanmay on the technical side.
 
 – Aditi"""
-
 email_thread3 = """
 From: Anil
 Subject: Confirmation of the order placement
@@ -685,11 +672,8 @@ Regards
 Anil
 """
 
-summary = summarize_threads(email_thread3).split("**Summary:**")[1]
-
-print("===============\nSummary :" , summary, "\n===============\n")
-
-run_email_assistant(summary, user_style, "Ravi")
-
-#reply = check_missing_info(summary, "Anil", "")
-#print(reply)
+#summary = summarize_threads(email_thread3).split("**Summary:**")[1]
+#
+#print("===============\nSummary :" , summary, "\n===============\n")
+#
+#run_email_assistant(summary, user_style, "Ravi")

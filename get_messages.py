@@ -2,6 +2,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import json
+from email.utils import parseaddr
 from base64 import urlsafe_b64decode as decode_base64url
  
 def get_messages(creds, query):
@@ -57,9 +58,13 @@ def get_thread(creds, threadID):
             thread_id = msg['threadId']
             headers = msg['payload']['headers']
             subject = next((h['value'] for h in headers if h['name'] == 'Subject'), '(No Subject)')
+            from_header = next((h['value'] for h in headers if h['name'].lower() == 'from'), None)
+            sender_name, sender_email = parseaddr(from_header)
             body = msg.get('snippet', '(No Body)')
             ans.append({
                 'id': id,
+                'SenderName' : sender_name,
+                'SenderMail' : sender_email,
                 'threadId': thread_id,
                 'subject': subject,
                 'body': body
