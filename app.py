@@ -42,7 +42,7 @@ def validate_user():
         session["name"] =  current_user.name
         session["logged_in"] = True
         session["user_id"] = current_user.id
-        return render_template("home.html")
+        return redirect(url_for('search_window'))
 
 @app.route("/addUser", methods=["POST"])
 def addUser():
@@ -74,7 +74,7 @@ def search_mails():
 
 @app.route("/search_window")
 def search_window():
-    return render_template("search.html")
+    return render_template("search.html", username = session['name'], mailID = session['email'])
 
 @app.route("/get_thread/<threadID>", methods=["GET"])
 def get_thread(threadID):
@@ -191,7 +191,7 @@ def home():
         if not credentials:
             print("No valid credentials found in session, redirecting to authorization...")
             return redirect(url_for('authorization'))
-    return render_template("home.html", session=True, name=session.get("name", "Guest"))
+    return redirect(url_for('search_window'))
 
 @app.route("/authorize")
 def authorization():
@@ -206,6 +206,13 @@ def authorization():
     session['state'] = state
     session.modified = True
     return redirect(authorization_url)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    session['logged_in'] = False
+    print("Logging out...")
+    return redirect(url_for("startup"))
 
 @app.route("/oauth2callback")
 def oauth2callback():

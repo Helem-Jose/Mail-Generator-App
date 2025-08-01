@@ -1,60 +1,92 @@
-{%extends "base.html" %} 
-
-{% block head %}
+{%extends "base.html" %} {% block head %}
 <title>Mail Generator</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='generate.css') }}" />
-{%endblock%}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='generate.css') }}"
+/>
+<link
+  href="https://fonts.googleapis.com/css2?family=Caveat&display=swap"
+  rel="stylesheet"
+/>
+<link
+  href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap"
+  rel="stylesheet"
+/>
 
-{% block content %}
-    <div class="container">
-    <h1>Mail Generator</h1>
+{%endblock%} {% block content %}
+<div class="back-float">
+  <form action="{{url_for('search_window')}}" method="GET">
+    <button
+      type="submit" class="back-btn" title="Back"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        fill="none"
+        stroke="black"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+    </button>
+  </form>
+</div>
 
-    <label>Current Thread :</label>
-    <div class="box thread">
-        {% for mail in mails %}
-      <p><strong>Subject:</strong> {{ mail.subject|safe }}<br><strong>Body:</strong> {{ mail.body |safe}}</p>
-      {% endfor %}
-    </div>
+<div class="container">
+  <h1>Mail Generator</h1>
 
-    <label>Generated Summary of Thread :</label>
-    <div class="box summary">
-      {{summary|safe}}
-    </div>
-
-    <label>Generated Mail :</label>
-    <div class="box mail">
-      <p>{{reply|safe}}</p>
-    </div>
-
-    <div class="question">
-      <em>{{question|safe}}</em>
-    </div>
-
-    <div class="reply-box">
-      <input type="text" placeholder="Enter your reply..." />
-      <button id="qButton">&#10148;</button>
-    </div>
+  <label>Current Thread :</label>
+  <div class="box thread">
+    {% for mail in mails %}
+    <p>
+      <strong>Subject:</strong> {{ mail.subject|safe }}<br /><strong
+        >Body:</strong
+      >
+      {{ mail.body |safe}}
+    </p>
+    {% endfor %}
   </div>
 
-  <script>
-    async function sendRequest(){
-      const reply = document.querySelector('.reply-box input').value;
-      console.log(reply);
-      if (!reply) {
-        console.log("Please enter a reply.");
-        return;
-      }
-      const response = await fetch(`/get_model_output/${reply}`);
-      data = await response.json();
-      if ('reply' in data){
-        console.log("Reply received:", data.reply);
-        document.querySelector('.mail').innerHTML = `<p>${data.reply}</p>`;
-      }
-      console.log(data.question);
-      document.querySelector('.question').innerHTML = `<em>${data.question}</em>`;
-    }
+  <label>Generated Summary of Thread :</label>
+  <div class="box summary">{{summary|safe}}</div>
 
-    document.querySelector('#qButton').addEventListener('click', sendRequest)
-  </script>
+  <label>Generated Mail :</label>
+  <div class="box mail">
+    <p>{{reply|safe}}</p>
+  </div>
+
+  <div class="question">
+    <em>{{question|safe}}</em>
+  </div>
+
+  <div class="reply-box">
+    <input type="text" placeholder="Enter your reply..." />
+    <button id="qButton">&#10148;</button>
+  </div>
+</div>
+
+<script>
+  async function sendRequest() {
+    const reply = document.querySelector(".reply-box input").value;
+    console.log(reply);
+    if (!reply) {
+      console.log("Please enter a reply.");
+      return;
+    }
+    const response = await fetch(`/get_model_output/${reply}`);
+    data = await response.json();
+    if ("reply" in data) {
+      console.log("Reply received:", data.reply);
+      document.querySelector(".mail").innerHTML = `<p>${data.reply}</p>`;
+    }
+    console.log(data.question);
+    document.querySelector(".question").innerHTML = `<em>${data.question}</em>`;
+  }
+
+  document.querySelector("#qButton").addEventListener("click", sendRequest);
+</script>
 
 {%endblock%}

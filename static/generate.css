@@ -1,11 +1,19 @@
 /* Global Styles */
+
 body {
-  background-color: #f5f3ea;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+ width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   padding: 2rem;
   color: #333;
+  /* Add your background pattern here */
+  background-color: #ffffff;
+  background-image: radial-gradient(rgba(12, 12, 12, 0.171) 2px, transparent 0);
+  background-size: 30px 30px;
+  background-position: -5px -5px;
+  padding:2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Container Box */
@@ -21,8 +29,9 @@ body {
 
 /* Heading */
 h1 {
+  font-family: 'Dancing Script', cursive;
   text-align: center;
-  font-size: 2.2rem;
+  font-size: 4rem;
   margin-bottom: 2rem;
   font-weight: 600;
 }
@@ -97,4 +106,32 @@ label {
 
 .reply-box button:hover {
   background-color: #005fa3;
+}
+
+.back-float {
+  display: flex;
+  justify-content: flex-end;
+  margin: -1rem 0rem 0rem 0;
+  position: relative;
+  z-index: 10;
+  padding:2rem;
+}
+
+.back-btn {
+  width: 44px;
+  height: 44px;
+  background-color: #fffef9; /* Tailwind blue-600 */
+  color: white;
+  font-size: 5rem;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.back-btn:hover {
+  background-color: #d81d1d; /* Tailwind blue-700 */
 }

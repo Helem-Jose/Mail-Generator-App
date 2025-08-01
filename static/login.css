@@ -154,6 +154,7 @@ body{
 }
 
 .title {
+  font-family: 'Caveat', cursive;
   margin: 20px 0 20px 0;
   font-size: 50px;
   font-weight: 900;
@@ -204,6 +205,7 @@ body{
 } 
 
 .footer{
+    font-family: 'Dancing Script', cursive;
     position: absolute;
     bottom: 20px;
     left: 50%;

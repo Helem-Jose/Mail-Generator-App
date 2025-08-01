@@ -1,27 +1,60 @@
 {%extends "base.html" %} {%block head%}
 <title>Search Page</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='search.css') }}" />
-{%endblock%} {%block content%}
-<div class="container">
-  <h2>Search Emails</h2>
+<link
+  href="https://fonts.googleapis.com/css2?family=Caveat&display=swap"
+  rel="stylesheet"
+/>
 
+{%endblock%} {%block content%}
+<div class="logout-float">
+  <form action="{{url_for('logout')}}" method="GET">
+    <button type="submit" class="logout-btn" title="Logout">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="50"
+        height="50"
+        fill="none"
+        stroke="white"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        viewBox="0 0 24 24"
+      >
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
+    </button>
+  </form>
+</div>
+
+<div class="container">
+  <div class="header">
+    <div class="welcome">
+      <h2>Welcome {{username}},</h2>
+    </div>
+    <div class="profile-block">
+      <img
+        src="{{ url_for('static', filename='avatar.webp') }}"
+        alt="Profile"
+      />
+      <p class="mail-id">{{mailID}}</p>
+    </div>
+  </div>
+
+  <h3>Search Mail:</h3>
   <form id="search-form">
-    <input
-      type="text"
-      name="subject"
-      id="subject"
-      placeholder="Enter subject..."
-      required
-    />
-    <button type="submit">Search</button>
+    <input type="text" name="subject" id="subject" placeholder="Subject" />
+    <button type="submit" class="search_mail">Search</button>
   </form>
 
   <table id="results">
     <thead>
       <tr>
         <th>Subject</th>
-        <th>Body Snippet</th>
-        <th>Actions</th>
+        <th>Body</th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody>
@@ -43,14 +76,16 @@
       const res = await fetch(`/search?subject=${encodeURIComponent(subject)}`);
       const data = await res.json();
       tableBody.innerHTML = "";
-      
+
       if (data.results && data.results.length > 0) {
         data.results.forEach((item) => {
           const row = document.createElement("tr");
           row.innerHTML = `
                 <td>${item.subject}</td>
                 <td>${decodeHTMLEntities(item.body)}</td>
-                <td> <button class="thread-select" data-thread-id="${item.threadId}">
+                <td> <button class="thread-select" data-thread-id="${
+                  item.threadId
+                }">
                       <span class="transition"></span>
                       <span class="gradient"></span>
                       <span class="label">Select</span>
@@ -60,11 +95,13 @@
           tableBody.appendChild(row);
         });
 
-        document.querySelectorAll(".thread-select").forEach((button) => {button.addEventListener("click", async (event) => {
-        event.preventDefault();
-        console.log(`Thread ID: ${button.dataset.threadId}`);
-        window.location.href = `/get_thread/${button.dataset.threadId}`;
-        })});
+        document.querySelectorAll(".thread-select").forEach((button) => {
+          button.addEventListener("click", async (event) => {
+            event.preventDefault();
+            console.log(`Thread ID: ${button.dataset.threadId}`);
+            window.location.href = `/get_thread/${button.dataset.threadId}`;
+          });
+        });
       } else {
         const row = document.createElement("tr");
         row.innerHTML = `<td colspan="2">${
@@ -73,7 +110,6 @@
         tableBody.appendChild(row);
       }
     });
-    
 
   function decodeHTMLEntities(text) {
     const txt = document.createElement("textarea");

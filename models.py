@@ -7,4 +7,4 @@ class User(db.Model):
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    refreshTOKEN = db.Column(db.String(150))
+    #refreshTOKEN = db.Column(db.String(150))
