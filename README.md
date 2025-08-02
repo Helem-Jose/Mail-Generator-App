@@ -176,7 +176,7 @@ The system generates replies using a **multi-stage approach**:
 
 ### **Step 2: Writing Style Analysis**
 1. **Access Style Analysis**
-   - Navigate to `/style` in your browser
+   - You will then be redirected to `/style` in your browser
    - The system will automatically fetch your sent emails
 
 2. **Style Processing**
@@ -190,10 +190,10 @@ The system generates replies using a **multi-stage approach**:
 
 ### **Step 3: Email Search & Selection**
 1. **Search Interface**
-   - Navigate to `/search_window`
+   - You will then be redirected to `/search_window`
    - Use the search interface to find specific emails
-   - Search by subject, sender, or other criteria
-
+   - Search by subject
+     
 2. **Thread Selection**
    - Browse through search results
    - Click on email threads to view full conversations
@@ -242,11 +242,6 @@ The system generates replies using a **multi-stage approach**:
 - System maintains conversation history
 - Understands email thread context
 - Preserves tone and formality levels
-
-#### **Error Handling**
-- Graceful handling of API failures
-- Automatic retry mechanisms
-- Clear error messages for troubleshooting
 
 ### **Best Practices**
 
