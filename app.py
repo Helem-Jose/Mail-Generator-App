@@ -262,5 +262,5 @@ def oauth2callback():
     return redirect(url_for('home'))
 
 if __name__ == "__main__":
-    app.run(debug=True, threaded=True, use_reloader=False)
+    app.run(debug=False, threaded=True, use_reloader=False)
     session.clear()
