@@ -9,7 +9,7 @@ The application uses a sophisticated AI pipeline with three main components:
 
 ### 1. Writing Style Analysis (20+ Features)
 
-The system analyzes your email writing style using **20+ linguistic features**:
+The system analyzes your email writing style using **20+ linguistic features** based on the [Coh-Metrix computational tool](https://cdn.aaai.org/FLAIRS/2006/Flairs06-151.pdf), which provides over 200 indices of cohesion, difficulty, and readability. Our implementation uses the top 20 most discriminative features identified in the research:
 
 #### **Cohesion Features**
 - **Connective Density**: Frequency of linking words (however, because, therefore)
@@ -43,6 +43,8 @@ The system analyzes your email writing style using **20+ linguistic features**:
 - **Exclamation Density**: Use of exclamation marks
 - **Question Density**: Use of question marks
 - **Emoji/Symbol Density**: Special character usage
+
+*Note: This analysis is based on the research by McCarthy et al. (2006) who demonstrated that authors within the same register can be computationally distinguished using sophisticated textual indices from Coh-Metrix.*
 
 ### 2. Email Thread Summarization
 
@@ -83,7 +85,8 @@ The system generates replies using a **multi-stage approach**:
 #### **Natural Language Processing**
 - **SpaCy**: Advanced NLP for text analysis and feature extraction
 - **TextStat**: Readability metrics and text statistics
-- **Custom Style Analyzer**: Proprietary algorithm for writing style detection
+- **Custom Style Analyzer**: Proprietary algorithm based on Coh-Metrix research for writing style detection
+- **Coh-Metrix-Inspired Features**: 20+ discriminative features derived from McCarthy et al. (2006) research
 
 #### **Large Language Model**
 - **Groq API**: High-performance LLM for summarization and generation
@@ -116,7 +119,7 @@ The system generates replies using a **multi-stage approach**:
 
 ### Technical Implementation
 
-- **Feature Extraction**: Real-time analysis of 20+ linguistic features
+- **Feature Extraction**: Real-time analysis of 20+ linguistic features based on Coh-Metrix research
 - **Style Similarity**: Euclidean distance calculation with weighted features
 - **Context Management**: Session-based storage of conversation state
 - **Error Handling**: Graceful fallbacks for API failures and edge cases
@@ -176,7 +179,7 @@ The system generates replies using a **multi-stage approach**:
 
 ### **Step 2: Writing Style Analysis**
 1. **Access Style Analysis**
-   - Navigate to `/style` in your browser
+   - You will then be redirected to `/style` in your browser
    - The system will automatically fetch your sent emails
 
 2. **Style Processing**
@@ -190,9 +193,9 @@ The system generates replies using a **multi-stage approach**:
 
 ### **Step 3: Email Search & Selection**
 1. **Search Interface**
-   - Navigate to `/search_window`
+   - You will then be redirected to `/search_window`
    - Use the search interface to find specific emails
-   - Search by subject, sender, or other criteria
+   - Search by subject 
 
 2. **Thread Selection**
    - Browse through search results
@@ -243,10 +246,6 @@ The system generates replies using a **multi-stage approach**:
 - Understands email thread context
 - Preserves tone and formality levels
 
-#### **Error Handling**
-- Graceful handling of API failures
-- Automatic retry mechanisms
-- Clear error messages for troubleshooting
 
 ### **Best Practices**
 
