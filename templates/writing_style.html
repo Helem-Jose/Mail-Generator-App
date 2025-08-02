@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analyzing Writing Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 h-screen flex items-center justify-center">
+    <div class="bg-white shadow-lg rounded-2xl p-8 max-w-md w-full text-center">
+      <div class="flex flex-col items-center space-y-4">
+        <svg
+          class="animate-spin h-10 w-10 text-blue-500"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8H4z"
+          ></path>
+        </svg>
+        <h2 class="text-xl font-semibold text-gray-700">
+          Analyzing your writing style...
+        </h2>
+        <p class="text-sm text-gray-500">
+          This will help us tailor responses to match how you write.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      async function analyzeStyle() {
+        try {
+          const reply = await fetch("/get_style");
+          console.log(reply);
+          if (reply.status === 200) {
+            window.location.href = "/search_window";
+          } else {
+            alert("Error analyzing writing style. Please try again.");
+          }
+        } catch (err) {
+          alert("Network error. Please try again.");
+          console.error(err);
+        }
+      }
+
+      window.onload = analyzeStyle;
+    </script>
+  </body>
+</html>

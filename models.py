@@ -7,4 +7,6 @@ class User(db.Model):
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    #refreshTOKEN = db.Column(db.String(150))
+    credentials = db.Column(db.String(500))
+    writingStyle = db.Column(db.String(1000))
+    mails = db.Column(db.JSON)

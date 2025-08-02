@@ -5,12 +5,15 @@ from google.oauth2.credentials import Credentials
 from db import init_app, db
 from models import User
 import re
-import requests
 import authenticate
 import get_messages
 import json
-import threading
+import os
 import agent
+from dotenv import load_dotenv
+import bcrypt
+
+load_dotenv()
 
 with open("app_secret_key.json", "r") as f:
     secret_key = json.load(f)["app-key"]
@@ -32,9 +35,10 @@ def validate_user():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-        user = db.session.execute(db.select(User).where(User.email == email, User.password == password))
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        user = db.session.execute(db.select(User).where(User.email == email))
         current_user = user.scalar()
-        if(current_user is None):
+        if(current_user is None or not bcrypt.checkpw(password.encode('utf-8'), current_user.password.encode("utf-8"))):
             print("Invalid credentials")
             return render_template("login.html", session=True, message="Invalid credentials!")
         print("Valid credentials")
@@ -42,7 +46,23 @@ def validate_user():
         session["name"] =  current_user.name
         session["logged_in"] = True
         session["user_id"] = current_user.id
-        return redirect(url_for('search_window'))
+        return redirect(url_for('home'))
+
+@app.route("/get_style")
+def get_writingStyle():
+    credentials = Credentials.from_authorized_user_info(json.loads(authenticate.get_credentials(session["email"])))
+    messages = get_messages.get_full_messages(credentials, ["SENT"])
+    final_thread = ""
+    for message in messages:
+        final_thread += message["body"]
+    print("Final Thread :", final_thread,"\n")
+    print("Fetching Users Writing style ...")
+    writing_style = agent.get_style(final_thread)
+    print("Writing Style :", "\n".join(writing_style), "\n")
+    current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
+    current_user.writingStyle = "\n".join(writing_style)
+    db.session.commit()
+    return jsonify({"status": 200})
 
 @app.route("/addUser", methods=["POST"])
 def addUser():
@@ -50,11 +70,13 @@ def addUser():
         name = request.form.get("name")
         email = request.form.get("email")
         password = request.form.get("password")
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        print(f"Hashed : {hashed}, Password:{password}")
         existing_user = db.session.execute(db.select(User).where(User.email == email))
         if len(existing_user.all()) != 0:
             return render_template("login.html", session=False, message="User already exists!")
         else:
-            new_user = User(name=name, email=email, password=password)
+            new_user = User(name=name, email=email, password=hashed.decode('utf-8'), credentials = "NOT SET", writingStyle = "NOT SET")
             db.session.add(new_user)
             db.session.commit()
         return render_template("login.html",session = True, message="User added successfully!")  
@@ -64,7 +86,7 @@ def search_mails():
     if request.method == "GET":
         print("Searching emails...")
         query = f"subject:{request.args.get('subject')}"
-        credentials = authenticate.get_credentials_from_session(session)
+        credentials = Credentials.from_authorized_user_info(json.loads(authenticate.get_credentials(session["email"])))
         if not credentials:
             print("No valid credentials found in session, redirecting to authorization...")
             return redirect(url_for('authorization'))
@@ -74,17 +96,27 @@ def search_mails():
 
 @app.route("/search_window")
 def search_window():
+    current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
+    if current_user.writingStyle == "NOT SET":
+        return redirect(url_for("writingStyle"))
+    session['style_hint'] = current_user.writingStyle
     return render_template("search.html", username = session['name'], mailID = session['email'])
+
+@app.route("/style")
+def writingStyle():
+    return render_template("writing_style.html")
 
 @app.route("/get_thread/<threadID>", methods=["GET"])
 def get_thread(threadID):
     print(f"Getting thread with thread ID : {threadID}")
-    credentials = authenticate.get_credentials_from_session(session)
+    credentials = Credentials.from_authorized_user_info(json.loads(authenticate.get_credentials(session["email"])))
     if not credentials:
         print("No valid credentials found in session, redirecting to authorization...")
         return redirect(url_for('authorization'))
     mails = get_messages.get_thread(credentials, threadID)
-    session["mails"] = mails
+    current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
+    current_user.mails = mails
+    db.session.commit()
     return redirect(url_for("generate"))
 
 @app.route("/get_model_output/<reply>", methods = ["GET"])
@@ -135,35 +167,14 @@ def generate():
     session['additional_info'] = ''
     session['questions'] = []
     session['answers'] = {}
-    session['style_hint'] = """
-Connective word usage is 4.0%, indicating a low presence of linking words.
-Pronoun usage is 8.0%, which is considered moderate.
-Lexical diversity (based on unique words longer than 3 characters) is 65.0%, suggesting a very high variety in vocabulary.
-The average sentence length is 15.2 words, which is considered long.
-Clause density (indicating structural complexity from subordinate, adverbial, or relative clauses) is 12.0%, which is a moderate level.
-Passive voice usage is 3.0%, indicating a low preference for passive constructions.
-The average word length is 4.8 characters, which is considered short.
-The average number of syllables per word is 1.5, indicating short word complexity.
-The Type-Token Ratio (vocabulary richness) is 55.0%, suggesting a very high diversity in word choice.
-Informal language usage is 0.5%, indicating a very low presence of informal words.
-The Flesch-Kincaid readability grade is 7.5, meaning the text is easy to read (suitable for middle school grades).
-The SMOG readability index is 9.0, suggesting the text is easy to read.
-The Gunning-Fog readability score is 9.8, indicating the text is moderately easy to read (suitable for high school grades).
-The proportion of nouns is 22.0%, which is a high ratio of nouns in the text.
-The proportion of verbs is 18.0%, which is a high ratio of verbs in the text.
-The proportion of adjectives is 7.0%, which is a moderate ratio of adjectives in the text.
-The proportion of adverbs is 5.0%, which is a moderate ratio of adverbs in the text.
-Contraction usage is 1.0%, indicating a very low presence of contractions.
-Contraction usage is 1.0%, indicating a very low presence of contractions.
-Exclamation mark usage is 0.2%, which is a very low density per sentence.
-Question mark usage is 0.8%, which is a very low density per sentence.
-Emoji or special symbol usage is 0.0%, indicating a very low presence of such characters.
-""" #Properly generate this and put in database
-    session['summary'] = convert_summary_to_html(agent.summarize_threads(get_mail_thread(session["mails"])).split("**Summary:**")[1])
+    current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
+    mails = current_user.mails
+    session['summary'] = convert_summary_to_html(agent.summarize_threads(get_mail_thread(mails)).split("**Summary:**")[1])
     print("Summary Generated : ", session['summary'])
     question_dict = agent.run_email_assistant(session['summary'], session["style_hint"], session['name'], session["additional_info"])
     print("Received questions", question_dict)
     reply = "Gathering info..."
+    next_question = "Generated mail.."
     if question_dict != "FINAL ANSWER":
         for i, question in question_dict.items():
             session['questions'].append(question)
@@ -172,7 +183,7 @@ Emoji or special symbol usage is 0.0%, indicating a very low presence of such ch
         reply = agent.generate_email_reply(session['summary'], session["style_hint"], session["additional_info"])
     session.modified = True        
 
-    return render_template("generate_mail.html", mails=session["mails"], summary=session['summary'], question = next_question, reply = reply)
+    return render_template("generate_mail.html", mails=mails, summary=session['summary'], question = next_question, reply = reply)
 
 def get_mail_thread(mails):
     thread = ""
@@ -186,11 +197,14 @@ def home():
     if "logged_in" not in session or not session["logged_in"]:
         print("User not logged in, redirecting to login...")
         return render_template("login.html", session=True, message="Please log in first!")
-    if "credentials" in session:
-        credentials = authenticate.get_credentials_from_session(session)
-        if not credentials:
-            print("No valid credentials found in session, redirecting to authorization...")
-            return redirect(url_for('authorization'))
+    credentials = authenticate.get_credentials(session["email"])
+    print("Credentials Stored :", credentials)
+    if credentials == "NOT SET":
+        print("No valid credentials found in session, redirecting to authorization...")
+        return redirect(url_for('authorization'))
+    else:
+        session['credentials'] = credentials
+            
     return redirect(url_for('search_window'))
 
 @app.route("/authorize")
@@ -229,9 +243,12 @@ def oauth2callback():
         return redirect(url_for('authorization'))
     print("Credentials validity check...",  creds.valid)
     session['logged_in'] = True
+    current_user = db.session.execute(db.select(User).where(User.email == session['email'])).scalar()
+    current_user.credentials = authenticate.encrypt_token(credentials, os.environ.get("encryption_key"))
+    db.session.commit()
+    session["credentials"] = credentials
     return redirect(url_for('home'))
 
 if __name__ == "__main__":
-    # use_reloader=False to prevent the app from running twice may help in session issues
     app.run(debug=True, threaded=True, use_reloader=False)
-    #session.clear()  # Clear session at startup to avoid stale data
+    session.clear()
