@@ -90,19 +90,6 @@ class StyleAnalyzer:
             'emoji_density': len(re.findall(r"[^\w\s,.!?;:]", text)) / max(1, word_count),
         }
 
-    def style_similarity(self, features1, features2):
-        # Convert to arrays in fixed order
-        vec1 = np.array([features1[k] for k in self.feature_names])
-        vec2 = np.array([features2[k] for k in self.feature_names])
-
-        # Apply feature weights
-        diff = (vec1 - vec2) * self.weights
-    
-        # Compute normalized similarity (inverse of distance)
-        distance = np.linalg.norm(diff)  # Euclidean
-        similarity = 1 / (1 + distance)  # Bound between 0 and 1
-    
-        return similarity
     
     def get_qualitative_level(self, value, type="ratio"):
         """

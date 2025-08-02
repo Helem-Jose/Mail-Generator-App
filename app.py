@@ -36,7 +36,7 @@ init_app(app)
 
 @app.route("/")
 def index():
-    return "<h1>Hello World!</h1>"
+    return render_template("home.html")
 
 @app.route("/login")
 def startup():

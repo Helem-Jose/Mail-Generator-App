@@ -1,39 +1,54 @@
 /* Global Styles */
 
 body {
- width: 100%;
+  width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   padding: 2rem;
   color: #333;
-  /* Add your background pattern here */
   background-color: #ffffff;
   background-image: radial-gradient(rgba(12, 12, 12, 0.171) 2px, transparent 0);
   background-size: 30px 30px;
   background-position: -5px -5px;
-  padding:2rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
 }
 
 /* Container Box */
 .container {
   border: 2px solid #2f2f2f;
   background-color: #fffef9;
-  padding: 30px;
-  max-width: 650px;
+  padding: 2.5rem;
+  max-width: 800px;
   width: 100%;
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
 }
 
 /* Heading */
 h1 {
   font-family: 'Dancing Script', cursive;
   text-align: center;
-  font-size: 4rem;
+  font-size: 3.5rem;
   margin-bottom: 2rem;
   font-weight: 600;
+  color: #2f2f2f;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #2f2f2f, #555);
+  border-radius: 2px;
 }
 
 /* Labels */
@@ -41,97 +56,309 @@ label {
   font-weight: 600;
   display: block;
   margin-top: 1.5rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.8rem;
+  color: #2f2f2f;
+  font-size: 1.1rem;
+  position: relative;
+}
+
+label::before {
+  content: '📝';
+  margin-right: 0.5rem;
+  font-size: 1rem;
 }
 
 /* Content Boxes */
 .box {
-  border: 2px solid #555;
-  border-radius: 10px;
-  padding: 12px;
+  border: 2px solid #2f2f2f;
+  border-radius: 12px;
+  padding: 1.5rem;
   background-color: #ffffff;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
-  max-height: 150px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  max-height: 200px;
   overflow-y: auto;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease-in-out;
+  position: relative;
+}
+
+.box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Custom scrollbar for content boxes */
+.box::-webkit-scrollbar {
+  width: 8px;
+}
+
+.box::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.box::-webkit-scrollbar-thumb {
+  background: #2f2f2f;
+  border-radius: 4px;
+}
+
+.box::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 /* Question Box */
 .question {
-  margin: 1.2rem 0;
+  margin: 1.5rem 0;
   font-style: italic;
-  padding: 12px;
-  border: 2px solid #999;
-  border-radius: 10px;
-  background-color: #f1f1e9;
-  font-size: 1rem;
+  padding: 1.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  font-size: 1.1rem;
+  color: #2f2f2f;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+.question::before {
+  content: '❓';
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  background: #fffef9;
+  padding: 0 8px;
+  font-size: 1.2rem;
+}
+
+.question:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* Reply Box */
 .reply-box {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-top: 0.5rem;
+  gap: 1rem;
+  margin-top: 1rem;
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease-in-out;
+}
+
+.reply-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 /* Input */
 .reply-box input {
   flex: 1;
-  padding: 12px 16px;
-  border: 2px solid #444;
+  padding: 1rem 1.5rem;
+  border: 2px solid #d1d5db;
   border-radius: 25px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.3s ease-in-out;
+  background: #fafbfc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .reply-box input:focus {
-  border-color: #0077cc;
+  border-color: #2f2f2f;
   outline: none;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(47, 47, 47, 0.1);
+}
+
+.reply-box input::placeholder {
+  color: #9ca3af;
+  font-style: italic;
 }
 
 /* Button */
 .reply-box button {
-  background-color: #0077cc;
+  background: linear-gradient(135deg, #2f2f2f 0%, #555 100%);
   color: white;
-  border: none;
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  padding: 10px 14px;
+  padding: 1rem;
   font-size: 1.2rem;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(47, 47, 47, 0.3);
+  min-width: 50px;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reply-box button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.reply-box button:hover::before {
+  left: 100%;
 }
 
 .reply-box button:hover {
-  background-color: #005fa3;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(47, 47, 47, 0.4);
 }
 
 .back-float {
   display: flex;
   justify-content: flex-end;
-  margin: -1rem 0rem 0rem 0;
+  margin: 1rem 2rem 0 0;
   position: relative;
   z-index: 10;
-  padding:2rem;
 }
 
 .back-btn {
-  width: 44px;
-  height: 44px;
-  background-color: #fffef9; /* Tailwind blue-600 */
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
   color: white;
-  font-size: 5rem;
+  font-size: 1.2rem;
   font-weight: bold;
   border-radius: 50%;
+  border: 2px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.back-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.back-btn:hover::before {
+  left: 100%;
 }
 
 .back-btn:hover {
-  background-color: #d81d1d; /* Tailwind blue-700 */
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 101, 101, 0.4);
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body {
+    padding: 1rem;
+  }
+  
+  .container {
+    padding: 1.5rem;
+    max-width: 100%;
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+  }
+  
+  .box {
+    padding: 1rem;
+    max-height: 150px;
+  }
+  
+  .question {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+  
+  .reply-box {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .reply-box input {
+    width: 100%;
+  }
+  
+  .reply-box button {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 2rem;
+  }
+  
+  .container {
+    padding: 1rem;
+  }
+  
+  .box, .question {
+    padding: 0.8rem;
+  }
+}
+
+/* Loading animation for content */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.box, .question {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Focus styles for accessibility */
+input:focus,
+button:focus {
+  outline: 2px solid #2f2f2f;
+  outline-offset: 2px;
+}
+
+/* Loading state for reply button */
+.reply-box button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.reply-box button:disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(47, 47, 47, 0.3);
+} 

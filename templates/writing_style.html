@@ -4,53 +4,75 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Analyzing Writing Style</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='writing_style.css') }}" />
   </head>
-  <body class="bg-gray-100 h-screen flex items-center justify-center">
-    <div class="bg-white shadow-lg rounded-2xl p-8 max-w-md w-full text-center">
-      <div class="flex flex-col items-center space-y-4">
-        <svg
-          class="animate-spin h-10 w-10 text-blue-500"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v8H4z"
-          ></path>
-        </svg>
-        <h2 class="text-xl font-semibold text-gray-700">
-          Analyzing your writing style...
-        </h2>
-        <p class="text-sm text-gray-500">
-          This will help us tailor responses to match how you write.
-        </p>
+  <body>
+    <div class="container">
+      <!-- Loading Spinner -->
+      <div class="spinner"></div>
+      
+      <!-- Heading -->
+      <h2>Analyzing your writing style...</h2>
+      
+      <!-- Description -->
+      <p class="description">
+        This will help us tailor responses to match how you write.
+      </p>
+      
+      <!-- Progress Bar -->
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
       </div>
+      
+      <!-- Status Text -->
+      <p class="status-text" id="statusText">Initializing analysis...</p>
     </div>
 
     <script>
       async function analyzeStyle() {
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('statusText');
+        
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += Math.random() * 15;
+          if (progress > 90) progress = 90;
+          progressBar.style.width = progress + '%';
+          
+          if (progress < 30) {
+            statusText.textContent = 'Collecting email samples...';
+          } else if (progress < 60) {
+            statusText.textContent = 'Analyzing writing patterns...';
+          } else if (progress < 90) {
+            statusText.textContent = 'Processing style features...';
+          }
+        }, 200);
+        
         try {
           const reply = await fetch("/get_style");
           console.log(reply);
+          
+          clearInterval(progressInterval);
+          progressBar.style.width = '100%';
+          statusText.textContent = 'Analysis complete!';
+          
           if (reply.status === 200) {
-            window.location.href = "/search_window";
+            setTimeout(() => {
+              window.location.href = "/search_window";
+            }, 1000);
           } else {
-            alert("Error analyzing writing style. Please try again.");
+            setTimeout(() => {
+              alert("Error analyzing writing style. Please try again.");
+            }, 1000);
           }
         } catch (err) {
-          alert("Network error. Please try again.");
-          console.error(err);
+          clearInterval(progressInterval);
+          statusText.textContent = 'Network error occurred';
+          setTimeout(() => {
+            alert("Network error. Please try again.");
+            console.error(err);
+          }, 1000);
         }
       }
 
