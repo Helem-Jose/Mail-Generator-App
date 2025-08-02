@@ -4,18 +4,22 @@ from googleapiclient.errors import HttpError
 import json
 from email.utils import parseaddr
 from base64 import urlsafe_b64decode as decode_base64url
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
  
 def get_messages(creds, query):
-    print("Getting messages...")
+    logger.info("Getting messages...")
     if not creds or not creds.valid:
-        print("Invalid credentials")
+        logger.warning("Invalid credentials")
         return []
     try:
         service = build('gmail', 'v1', credentials=creds)
         collection = service.users().messages().list(userId='me', q = query, maxResults=10)
         response = collection.execute()
         if 'messages' not in response:
-            print("No messages found.")
+            logger.info("No messages found.")
             return []
         ans = []
         for message in response['messages']:
@@ -34,16 +38,16 @@ def get_messages(creds, query):
         return ans
 
     except HttpError as error:
-        print(f'An error occurred: {error}')
+        logger.error(f'An error occurred: {error}')
         return None
     except TimeoutError as error:
-        print(f'Timeout occurred: {error}')
+        logger.error(f'Timeout occurred: {error}')
         return get_messages(creds, query)  # Retry on timeout
 
 def get_full_messages(creds, label_ids):
-    print("Getting messages...")
+    logger.info("Getting messages...")
     if not creds or not creds.valid:
-        print("Invalid credentials")
+        logger.warning("Invalid credentials")
         return []
 
     try:
@@ -52,7 +56,7 @@ def get_full_messages(creds, label_ids):
         response = collection.execute()
 
         if 'messages' not in response:
-            print("No messages found.")
+            logger.info("No messages found.")
             return []
 
         ans = []
@@ -76,10 +80,10 @@ def get_full_messages(creds, label_ids):
         return ans
 
     except HttpError as error:
-        print(f'An error occurred: {error}')
+        logger.error(f'An error occurred: {error}')
         return None
     except TimeoutError as error:
-        print(f'Timeout occurred: {error}')
+        logger.error(f'Timeout occurred: {error}')
         return get_full_messages(creds, label_ids)  # Retry on timeout
     
 def extract_body(payload):
@@ -100,7 +104,7 @@ def extract_body(payload):
 
 def get_thread(creds, threadID):
     if not creds or not creds.valid:
-        print("Invalid credentials")
+        logger.warning("Invalid credentials")
         return []
 
     try:
@@ -108,7 +112,7 @@ def get_thread(creds, threadID):
         thread_response = service.users().threads().get(userId='me', id=threadID, format='full').execute()
         
         if 'messages' not in thread_response:
-            print("No messages found.")
+            logger.info("No messages found.")
             return []
         
         ans = []
@@ -134,7 +138,7 @@ def get_thread(creds, threadID):
         return ans
 
     except HttpError as error:
-        print(f"An error occurred: {error}")
+        logger.error(f"An error occurred: {error}")
     except TimeoutError as error:
-        print(f"Timeout occurred: {error}")
+        logger.error(f"Timeout occurred: {error}")
         return get_thread(creds, threadID)

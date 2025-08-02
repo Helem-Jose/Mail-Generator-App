@@ -5,6 +5,7 @@
 #ignore Python cache files
 __pycache__/
 *.py[cod]
+app.log
 
 #ignore client secret files
 client_secret.json

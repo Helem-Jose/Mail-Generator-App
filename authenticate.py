@@ -9,6 +9,10 @@ import os
 import base64
 from models import User
 from dotenv import load_dotenv
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -35,7 +39,7 @@ def callback(state, code):
 
     flow.redirect_uri = redirect_uri
     authorization_response = flask.request.url
-    print("Getting credentials...")
+    logger.info("Getting credentials...")
     flow.fetch_token(authorization_response=authorization_response, code=code)
     credentials = flow.credentials.to_json()
     
@@ -79,12 +83,12 @@ def get_credentials(email):
         credentials = decrypt_token(current_user.credentials, os.environ.get("encryption_key"))
         creds = google.oauth2.credentials.Credentials.from_authorized_user_info(json.loads(credentials))
         if not creds:
-            print("Invalid credentials in session")
+            logger.warning("Invalid credentials in session")
             return None
         elif creds.expired and creds.refresh_token:
-            print("Refreshing credentials from session...")
+            logger.info("Refreshing credentials from session...")
             creds.refresh(Request())
-            print("Token refreshed successfully.")
+            logger.info("Token refreshed successfully.")
             current_user.credentials = encrypt_token(creds.to_json(), os.environ.get("encryption_key"))
             db.session.commit()
         return creds.to_json()

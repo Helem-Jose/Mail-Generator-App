@@ -8,10 +8,14 @@ from groq import Groq
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import math
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-print("Loaded Modules...")
+logger.info("Loaded Modules...")
 #nltk.download('punkt') # This has to be only run once
 nlp = spacy.load("en_core_web_sm")
 embedder = SentenceTransformer('all-MiniLM-L6-v2')
@@ -19,7 +23,7 @@ client = Groq(
     api_key=os.environ.get("GROQ_API_KEY"),
 )
 
-print("Initializing Tools...")
+logger.info("Initializing Tools...")
 
 class StyleAnalyzer:
     def __init__(self, use_weights=True):
@@ -488,11 +492,11 @@ def run_email_assistant(thread_summary: str, style_hint: str, recipient: str, ad
     if result["status"] == "unknown":
         match = re.search(r"FINAL ANSWER:\s*(.*)", result.get("raw", ""), re.DOTALL)
         if match:
-            print("\Ready to generate final reply...\n")
+            logger.info("\Ready to generate final reply...\n")
             #reply = generate_email_reply(thread_summary, style_hint, additional_info)
             return "FINAL ANSWER" #Tells that the model is ready to print the final answer
         else:
-            print("⚠️ Unrecognized output:\n", result.get("raw", ""))
+            logger.warning("⚠️ Unrecognized output:\n", result.get("raw", ""))
             return "MODEL ERROR"
 
     if result["status"] == "clarification":
@@ -500,7 +504,7 @@ def run_email_assistant(thread_summary: str, style_hint: str, recipient: str, ad
         #continue
 
 
-print("Finished Initializing Tools ....\n\n")
+logger.info("Finished Initializing Tools ....\n\n")
 
 
 #Test Material

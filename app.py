@@ -12,6 +12,18 @@ import os
 import agent
 from dotenv import load_dotenv
 import bcrypt
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -39,9 +51,9 @@ def validate_user():
         user = db.session.execute(db.select(User).where(User.email == email))
         current_user = user.scalar()
         if(current_user is None or not bcrypt.checkpw(password.encode('utf-8'), current_user.password.encode("utf-8"))):
-            print("Invalid credentials")
+            logger.warning("Invalid credentials")
             return render_template("login.html", session=True, message="Invalid credentials!")
-        print("Valid credentials")
+        logger.info("Valid credentials")
         session["email"] = email
         session["name"] =  current_user.name
         session["logged_in"] = True
@@ -55,10 +67,10 @@ def get_writingStyle():
     final_thread = ""
     for message in messages:
         final_thread += message["body"]
-    print("Final Thread :", final_thread,"\n")
-    print("Fetching Users Writing style ...")
+    logger.info(f"Final Thread : {final_thread}")
+    logger.info("Fetching Users Writing style ...")
     writing_style = agent.get_style(final_thread)
-    print("Writing Style :", "\n".join(writing_style), "\n")
+    logger.info(f"Writing Style : {' '.join(writing_style)}")
     current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
     current_user.writingStyle = "\n".join(writing_style)
     db.session.commit()
@@ -71,7 +83,7 @@ def addUser():
         email = request.form.get("email")
         password = request.form.get("password")
         hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        print(f"Hashed : {hashed}, Password:{password}")
+        logger.info(f"Hashed : {hashed}, Password:{password}")
         existing_user = db.session.execute(db.select(User).where(User.email == email))
         if len(existing_user.all()) != 0:
             return render_template("login.html", session=False, message="User already exists!")
@@ -84,13 +96,13 @@ def addUser():
 @app.route("/search", methods=["GET"])
 def search_mails():
     if request.method == "GET":
-        print("Searching emails...")
+        logger.info("Searching emails...")
         query = f"subject:{request.args.get('subject')}"
         credentials = Credentials.from_authorized_user_info(json.loads(authenticate.get_credentials(session["email"])))
         if not credentials:
-            print("No valid credentials found in session, redirecting to authorization...")
+            logger.warning("No valid credentials found in session, redirecting to authorization...")
             return redirect(url_for('authorization'))
-        print("Getting messages with query:", query)
+        logger.info(f"Getting messages with query: {query}")
         messages = get_messages.get_messages(credentials, query,)
         return jsonify({"results": messages})
 
@@ -108,10 +120,10 @@ def writingStyle():
 
 @app.route("/get_thread/<threadID>", methods=["GET"])
 def get_thread(threadID):
-    print(f"Getting thread with thread ID : {threadID}")
+    logger.info(f"Getting thread with thread ID : {threadID}")
     credentials = Credentials.from_authorized_user_info(json.loads(authenticate.get_credentials(session["email"])))
     if not credentials:
-        print("No valid credentials found in session, redirecting to authorization...")
+        logger.warning("No valid credentials found in session, redirecting to authorization...")
         return redirect(url_for('authorization'))
     mails = get_messages.get_thread(credentials, threadID)
     current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
@@ -121,37 +133,37 @@ def get_thread(threadID):
 
 @app.route("/get_model_output/<reply>", methods = ["GET"])
 def question(reply):
-    print("=====================\nQuestions Present till now: ", session['questions'], "\nAnswers :", session['answers'])
-    print("Reply Received from user :", reply)
+    logger.info(f"=====================\nQuestions Present till now: {session['questions']}\nAnswers :{session['answers']}")
+    logger.info(f"Reply Received from user : {reply}")
     next_question = ''
     if 'questions' in session:
-        print("\nGenerating ..")
+        logger.info("\nGenerating ..")
         session['answers'][session['questions'][0]] = reply
-        print(session['answers'])
+        logger.info(session['answers'])
         session['questions'].pop(0)
         session.modified = True
-        print("After removing element..", session['questions'], len(session['questions']))
+        logger.info(f"After removing element.. {session['questions']} {len(session['questions'])}")
         if len(session['questions']) == 0:
-            print("Getting new questions ...")
+            logger.info("Getting new questions ...")
             formatted = "\n".join([f"{qid}: {ans}" for qid, ans in session['answers'].items()])
             session["answers"] = {}
-            print(formatted)
+            logger.info(formatted)
             session['additional_info'] += f"\n{formatted}"
-            print("Additional info :", session['additional_info'])
+            logger.info(f"Additional info : {session['additional_info']}")
             question_dict = agent.run_email_assistant(session['summary'], session["style_hint"], session['name'], session["additional_info"])
-            print("Received questions", question_dict)
+            logger.info(f"Received questions {question_dict}")
             if question_dict != "FINAL ANSWER":
                 for i, question in question_dict.items():
                     session['questions'].append(question)
                 session.modified = True
             else:
                 reply = agent.generate_email_reply(session['summary'], session["style_hint"], session["additional_info"])
-                print("*************\nReply generated :\n", re.sub(r"^FINAL ANSWER:\s*", "", reply))
+                logger.info("*************\nReply generated :\n"+re.sub(r'^FINAL ANSWER:\s*', '', reply))
                 return jsonify({'reply': re.sub(r"^FINAL ANSWER:\s*", "", reply), 'question': "Reply generated..."})
         next_question = session['questions'][0] 
     else:
-        print("Error")
-    print("Session questions after loop :", session['questions'], len(session['questions']), "\n\n")
+        logger.error("Error")
+    logger.info(f"Session questions after loop : {session['questions']} {len(session['questions'])}\n\n")
     session.modified = True
     return jsonify({'question':next_question})
 
@@ -170,9 +182,9 @@ def generate():
     current_user = db.session.execute(db.select(User).where(User.email == session["email"])).scalar()
     mails = current_user.mails
     session['summary'] = convert_summary_to_html(agent.summarize_threads(get_mail_thread(mails)).split("**Summary:**")[1])
-    print("Summary Generated : ", session['summary'])
+    logger.info(f"Summary Generated : {session['summary']}")
     question_dict = agent.run_email_assistant(session['summary'], session["style_hint"], session['name'], session["additional_info"])
-    print("Received questions", question_dict)
+    logger.info(f"Received questions {question_dict}")
     reply = "Gathering info..."
     next_question = "Generated mail.."
     if question_dict != "FINAL ANSWER":
@@ -193,14 +205,14 @@ def get_mail_thread(mails):
 
 @app.route("/home")
 def home():
-    print("Accessing home page...")
+    logger.info("Accessing home page...")
     if "logged_in" not in session or not session["logged_in"]:
-        print("User not logged in, redirecting to login...")
+        logger.warning("User not logged in, redirecting to login...")
         return render_template("login.html", session=True, message="Please log in first!")
     credentials = authenticate.get_credentials(session["email"])
-    print("Credentials Stored :", credentials)
+    logger.info(f"Credentials Stored : {credentials}")
     if credentials == "NOT SET":
-        print("No valid credentials found in session, redirecting to authorization...")
+        logger.warning("No valid credentials found in session, redirecting to authorization...")
         return redirect(url_for('authorization'))
     else:
         session['credentials'] = credentials
@@ -209,12 +221,12 @@ def home():
 
 @app.route("/authorize")
 def authorization():
-    print("Authorizing...")
+    logger.info("Authorizing...")
     if "credentials" in session:
         creds = Credentials.from_authorized_user_info(json.loads(session["credentials"]))
         if creds and creds.valid and creds.expired == False and creds.refresh_token:
-            print("Already authorized, redirecting to home...")
-            print("Credentials:", session["credentials"])
+            logger.info("Already authorized, redirecting to home...")
+            logger.info(f"Credentials: {session['credentials']}")
             return redirect(url_for('home'))
     authorization_url, state = authenticate.authorize()
     session['state'] = state
@@ -225,23 +237,23 @@ def authorization():
 def logout():
     session.clear()
     session['logged_in'] = False
-    print("Logging out...")
+    logger.info("Logging out...")
     return redirect(url_for("startup"))
 
 @app.route("/oauth2callback")
 def oauth2callback():
-    print("OAuth2 callback...")
+    logger.info("OAuth2 callback...")
     if request.args.get('state') != session['state']:
-        print("State mismatch. Possible CSRF attack.")
+        logger.error("State mismatch. Possible CSRF attack.")
         return redirect(url_for('authorization'))
     credentials = authenticate.callback(session['state'], request.args.get('code'))
     session['credentials'] = credentials
-    print("Credentials received:", credentials)
+    logger.info(f"Credentials received: {credentials}")
     creds = Credentials.from_authorized_user_info(json.loads(credentials))
     if not creds.refresh_token:
-        print("Refresh token not present. Re-authorizing...")
+        logger.warning("Refresh token not present. Re-authorizing...")
         return redirect(url_for('authorization'))
-    print("Credentials validity check...",  creds.valid)
+    logger.info(f"Credentials validity check... {creds.valid}")
     session['logged_in'] = True
     current_user = db.session.execute(db.select(User).where(User.email == session['email'])).scalar()
     current_user.credentials = authenticate.encrypt_token(credentials, os.environ.get("encryption_key"))
