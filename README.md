@@ -1,4 +1,4 @@
-# Mail Generator App
+# VibeMail
 
 This app streamlines your daily email workflow by helping you quickly and effortlessly reply to incoming threads in your unique writing style. 
 It intelligently analyzes your writing habits, understands the context of each email conversation, prompts you for any additional information if needed, and generates personalized, context-aware email responses on your behalf.
@@ -161,13 +161,17 @@ The system generates replies using a **multi-stage approach**:
 ## 🎯 Usage Guide
 
 ### **Step 1: Initial Setup**
-1. **Register Account**
+1. **Landing Page**
+   - Navigate to "/"
+   - Click "Get Started"
+     
+2. **Register Account**
    - Navigate to `/login`
    - Click "Register" to create a new account
    - Provide your name, email, and password
    - The system will hash your password securely
 
-2. **Gmail Authorization**
+3. **Gmail Authorization**
    - After registration, you'll be redirected to Google OAuth2
    - Grant permissions for Gmail API access (read/write)
    - The application stores encrypted credentials securely
