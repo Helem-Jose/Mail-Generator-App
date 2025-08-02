@@ -5,7 +5,6 @@ from collections import Counter
 import os
 from dotenv import load_dotenv
 from groq import Groq
-from sentence_transformers import SentenceTransformer
 import numpy as np
 import math
 import logging
@@ -18,7 +17,6 @@ load_dotenv()
 logger.info("Loaded Modules...")
 #nltk.download('punkt') # This has to be only run once
 nlp = spacy.load("en_core_web_sm")
-embedder = SentenceTransformer('all-MiniLM-L6-v2')
 client = Groq(
     api_key=os.environ.get("GROQ_API_KEY"),
 )

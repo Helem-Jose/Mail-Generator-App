@@ -50,32 +50,7 @@ This document explains all the dependencies used in the Flask Email Assistant pr
 | groq | 0.4.2 | Groq API client for LLM access |
 | spacy | 3.8.2 | Natural language processing |
 | textstat | 0.7.3 | Text statistics and readability |
-| sentence-transformers | 2.5.1 | Sentence embeddings |
 | numpy | 2.2.4 | Numerical computing |
-
-## Machine Learning Dependencies
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| torch | 2.6.0 | PyTorch deep learning framework |
-| transformers | 4.50.0 | Hugging Face transformers library |
-| tokenizers | 0.21.1 | Fast tokenizers (transformers dependency) |
-| safetensors | 0.5.3 | Safe tensor serialization |
-| protobuf | 4.21.12 | Protocol buffers (transformers dependency) |
-| huggingface-hub | 0.29.3 | Hugging Face model hub |
-| fsspec | 2024.12.0 | File system interface |
-| packaging | 24.1 | Core utilities for Python packages |
-| typing_extensions | 4.13.0rc1 | Type hints for older Python versions |
-
-## Additional ML Dependencies
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| scikit-learn | 1.5.2 | Machine learning library (sentence-transformers dependency) |
-| scipy | 1.14.0 | Scientific computing (scikit-learn dependency) |
-| pandas | 2.2.3 | Data manipulation (scikit-learn dependency) |
-| joblib | 1.4.2 | Parallel computing (scikit-learn dependency) |
-| threadpoolctl | 3.4.0 | Thread pool control (scikit-learn dependency) |
 
 ## Environment and Configuration
 
@@ -129,11 +104,7 @@ LOG_LEVEL=INFO
 ### Required for AI Features
 - Groq API client
 - NLP libraries (spacy, textstat)
-- Machine learning libraries (torch, transformers)
-
-### Optional/Optimization
-- Additional ML dependencies for better performance
-- Caching libraries for API optimization
+- Numerical computing (numpy)
 
 ## Version Compatibility
 
@@ -141,7 +112,6 @@ All versions are tested and compatible with:
 - Python 3.8+
 - Flask 3.x
 - SQLAlchemy 2.x
-- PyTorch 2.x
 
 ## Security Considerations
 
@@ -151,6 +121,5 @@ All versions are tested and compatible with:
 
 ## Performance Considerations
 
-- `torch` and `transformers` are large packages (~2GB total)
 - `spacy` with language model adds ~500MB
 - Consider using virtual environments for isolation 
